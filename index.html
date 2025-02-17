@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Body Measurement Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .canvas-container {
+            position: relative;
+            margin: 20px 0;
+        }
+        canvas {
+            border: 1px solid #ccc;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .measurements {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Body Measurement Test Interface</h1>
+    
+    <div class="controls">
+        <input type="file" id="imageInput" accept="image/*">
+        <button id="clearPoints">Clear Points</button>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="measurementCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+        <p>First, click to mark the edges of the reference coin (2 points)</p>
+        <p>Then mark body points in this order:</p>
+        <ul>
+            <li>Top of head</li>
+            <li>Left shoulder</li>
+            <li>Right shoulder</li>
+            <li>Left hip</li>
+            <li>Right hip</li>
+            <li>Left ankle</li>
+            <li>Right ankle</li>
+        </ul>
+    </div>
+
+    <div class="measurements">
+        <h2>Measurements</h2>
+        <pre id="measurementOutput"></pre>
+    </div>
+
+    <script>
+        class BodyMeasurement {
+            constructor(referenceObjectSize, bodyKeyPoints) {
+                this.referenceSize = referenceObjectSize; // Size in mm (Canadian dollar = 26.5mm)
+                this.keyPoints = bodyKeyPoints; // Array of {x, y} coordinates for body landmarks
+                this.scaleFactor = null;
+            }
+
+            calibrateScale(referencePixelSize) {
+                this.scaleFactor = this.referenceSize / referencePixelSize;
+            }
+
+            calculateHeight() {
+                const topPoint = Math.min(...this.keyPoints.map(p => p.y));
+                const bottomPoint = Math.max(...this.keyPoints.map(p => p.y));
+                return (bottomPoint - topPoint) * this.scaleFactor;
+            }
+
+            calculateShoulderWidth() {
+                const leftShoulder = this.keyPoints[1];  // Index 1 is left shoulder
+                const rightShoulder = this.keyPoints[2]; // Index 2 is right shoulder
+                return Math.abs(rightShoulder.x - leftShoulder.x) * this.scaleFactor;
+            }
+        }
+
+        const canvas = document.getElementById('measurementCanvas');
+        const ctx = canvas.getContext('2d');
+        const imageInput = document.getElementById('imageInput');
+        const clearButton = document.getElementById('clearPoints');
+        const output = document.getElementById('measurementOutput');
+
+        let points = [];
+        let image = null;
+
+        // Handle image upload
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image = new Image();
+                    image.onload = () => {
+                        canvas.width = image.width;
+                        canvas.height = image.height;
+                        drawImage();
+                    };
+                    image.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Handle canvas clicks
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            points.push({ x, y });
+            drawImage();
+
+            // After collecting all points, calculate measurements
+            if (points.length >= 9) { // 2 points for reference + 7 body points
+                calculateMeasurements();
+            }
+        });
+
+        // Clear points
+        clearButton.addEventListener('click', () => {
+            points = [];
+            drawImage();
+            output.textContent = '';
+        });
+
+        function drawImage() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (image) {
+                ctx.drawImage(image, 0, 0);
+            }
+
+            // Draw points
+            points.forEach((point, index) => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+                ctx.fillStyle = index < 2 ? 'red' : 'blue';
+                ctx.fill();
+                ctx.fillText(`Point ${index + 1}`, point.x + 10, point.y);
+            });
+        }
+
+        function calculateMeasurements() {
+            // Calculate reference object size in pixels
+            const referenceSize = Math.sqrt(
+                Math.pow(points[1].x - points[0].x, 2) +
+                Math.pow(points[1].y - points[0].y, 2)
+            );
+
+            // Create body measurement instance
+            const bodyPoints = points.slice(2); // Skip reference points
+            const measurement = new BodyMeasurement(26.5, bodyPoints); // 26.5mm = Canadian dollar diameter
+            measurement.calibrateScale(referenceSize);
+
+            // Calculate measurements
+            const measurements = {
+                height: measurement.calculateHeight(),
+                shoulderWidth: measurement.calculateShoulderWidth(),
+            };
+
+            // Display results
+            output.textContent = JSON.stringify(measurements, null, 2);
+        }
+    </script>
+    
+</body>
+
+</html>
