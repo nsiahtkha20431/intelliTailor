@@ -1,46 +1,189 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-    <title>Body Measurement Test</title>
+    <title>Body Measurement Analyzer</title>
     <style>
+        :root {
+            --dark-bg: #1a1a1a;
+            --dark-grey: #2d2d2d;
+            --mid-grey: #404040;
+            --light-grey: #666;
+            --blue-accent: #4a90e2;
+            --text-color: #e0e0e0;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--text-color);
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            line-height: 1.6;
         }
+
+        h1 {
+            color: var(--blue-accent);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .controls {
+            background-color: var(--dark-grey);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .controls select,
+        .controls input[type="file"],
+        .controls button {
+            padding: 10px;
+            margin: 0 10px 10px 0;
+            border: none;
+            border-radius: 5px;
+            background-color: var(--mid-grey);
+            color: var(--text-color);
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .controls select:hover,
+        .controls button:hover {
+            background-color: var(--blue-accent);
+        }
+
+        .canvas-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
         .canvas-container {
             position: relative;
-            margin: 20px 0;
+            margin-bottom: 20px;
+            background-color: var(--mid-grey);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            flex: 1;
+            min-width: 300px;
         }
+
         canvas {
-            border: 1px solid #ccc; 
+            border: 2px solid var(--light-grey);
+            border-radius: 5px;
+            width: 100%;
+            height: auto;
+            background-color: #fff;
+            display: block;
         }
-        .controls {
-            margin: 20px 0;
+
+        .view-title {
+            color: var(--blue-accent);
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
         }
+
+        .active-view {
+            border: 3px solid var(--blue-accent);
+        }
+
+        .instructions {
+            background-color: var(--dark-grey);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .instructions ul {
+            list-style-type: none;
+            padding-left: 20px;
+        }
+
+        .instructions ul li::before {
+            content: "• ";
+            color: var(--blue-accent);
+        }
+
         .measurements {
-            margin-top: 20px;
+            background-color: var(--dark-grey);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+
+        .measurements h2 {
+            color: var(--blue-accent);
+            margin-top: 0;
+            border-bottom: 1px solid var(--light-grey);
+            padding-bottom: 10px;
+        }
+
+        pre {
+            background-color: var(--mid-grey);
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-size: 0.95em;
+        }
+
+        @media (max-width: 768px) {
+            .canvas-wrapper {
+                flex-direction: column;
+            }
+            
+            .controls select,
+            .controls input[type="file"],
+            .controls button {
+                display: block;
+                width: 100%;
+                margin: 10px 0;
+            }
         }
     </style>
 </head>
-
 <body>
-    <h1>Body Measurement Test Interface</h1>
+    <h1>Body Measurement Analyzer</h1>
     
     <div class="controls">
+        <select id="viewSelector">
+            <option value="front">Front View</option>
+            <option value="back">Back View</option>
+            <option value="side">Side View</option>
+        </select>
         <input type="file" id="imageInput" accept="image/*">
-        <button id="clearPoints">Clear Points</button>
+        <button id="clearPoints">Clear Current View Points</button>
+        <button id="clearAllPoints">Clear All Points</button>
     </div>
 
-    <div class="canvas-container">
-        <canvas id="measurementCanvas"></canvas>
+    <div class="canvas-wrapper">
+        <div class="canvas-container" id="frontContainer">
+            <div class="view-title">Front View</div>
+            <canvas id="frontCanvas"></canvas>
+        </div>
+        
+        <div class="canvas-container" id="backContainer">
+            <div class="view-title">Back View</div>
+            <canvas id="backCanvas"></canvas>
+        </div>
+        
+        <div class="canvas-container" id="sideContainer">
+            <div class="view-title">Side View</div>
+            <canvas id="sideCanvas"></canvas>
+        </div>
     </div>
 
-    <div class="controls">
+    <div class="instructions controls">
         <p>First, click to mark the edges of the reference coin (2 points)</p>
-        <p>Then mark body points in this order:</p>
+        <p>Then mark body points:</p>
+        <p><strong>Front/Back Views:</strong></p>
         <ul>
             <li>Top of head</li>
             <li>Left shoulder</li>
@@ -49,6 +192,13 @@
             <li>Right hip</li>
             <li>Left ankle</li>
             <li>Right ankle</li>
+        </ul>
+        <p><strong>Side View:</strong></p>
+        <ul>
+            <li>Top of head</li>
+            <li>Shoulder (highest point)</li>
+            <li>Hip (widest point)</li>
+            <li>Ankle (lowest point)</li>
         </ul>
     </div>
 
@@ -59,117 +209,289 @@
 
     <script>
         class BodyMeasurement {
-            constructor(referenceObjectSize, bodyKeyPoints) {
-                this.referenceSize = referenceObjectSize; // Size in mm (Canadian dollar = 26.5mm)
-                this.keyPoints = bodyKeyPoints; // Array of {x, y} coordinates for body landmarks
-                this.scaleFactor = null;
+            constructor(referenceSize) {
+                this.referenceSize = referenceSize;
+                this.views = {
+                    front: { points: [], scaleFactor: null, image: null, canvas: null, ctx: null },
+                    back: { points: [], scaleFactor: null, image: null, canvas: null, ctx: null },
+                    side: { points: [], scaleFactor: null, image: null, canvas: null, ctx: null }
+                };
             }
 
-            calibrateScale(referencePixelSize) {
-                this.scaleFactor = this.referenceSize / referencePixelSize;
+            calibrateScale(view, referencePixelSize) {
+                this.views[view].scaleFactor = this.referenceSize / referencePixelSize;
             }
 
             calculateHeight() {
-                const topPoint = Math.min(...this.keyPoints.map(p => p.y));
-                const bottomPoint = Math.max(...this.keyPoints.map(p => p.y));
-                return (bottomPoint - topPoint) * this.scaleFactor;
+                const sidePoints = this.views.side.points;
+                if (sidePoints.length < 6) return null;
+                const head = sidePoints[2];
+                const ankle = sidePoints[5];
+                const pixelHeight = ankle.y - head.y;
+                const perspectiveFactor = this.calculatePerspectiveFactor('side');
+                return pixelHeight * this.views.side.scaleFactor * perspectiveFactor;
             }
 
             calculateShoulderWidth() {
-                const leftShoulder = this.keyPoints[1];  // Index 1 is left shoulder
-                const rightShoulder = this.keyPoints[2]; // Index 2 is right shoulder
-                return Math.abs(rightShoulder.x - leftShoulder.x) * this.scaleFactor;
+                const frontWidth = this.calculateViewWidth('front', 1, 2);
+                const backWidth = this.calculateViewWidth('back', 1, 2);
+                const validWidths = [frontWidth, backWidth].filter(w => w !== null);
+                return validWidths.length ? validWidths.reduce((a, b) => a + b) / validWidths.length : null;
+            }
+
+            calculateHipWidth() {
+                const frontWidth = this.calculateViewWidth('front', 3, 4);
+                const backWidth = this.calculateViewWidth('back', 3, 4);
+                const validWidths = [frontWidth, backWidth].filter(w => w !== null);
+                return validWidths.length ? validWidths.reduce((a, b) => a + b) / validWidths.length : null;
+            }
+
+            calculateViewWidth(view, point1Idx, point2Idx) {
+                const points = this.views[view].points;
+                if (points.length < 7) return null;
+                const pixelWidth = Math.abs(points[point1Idx + 2].x - points[point2Idx + 2].x);
+                const perspectiveFactor = this.calculatePerspectiveFactor(view);
+                return pixelWidth * this.views[view].scaleFactor * perspectiveFactor;
+            }
+
+            calculatePerspectiveFactor(view) {
+                const points = this.views[view].points;
+                if (points.length < 5) return 1;
+                const canvas = this.views[view].canvas;
+                const upperMidY = view === 'side' ? points[3].y : (points[3].y + points[4].y) / 2;
+                const lowerMidY = view === 'side' ? points[4].y : (points[5].y + points[6].y) / 2;
+                const heightRatio = (lowerMidY - upperMidY) / canvas.height;
+                return 1 + (heightRatio - 0.5) * 0.2;
             }
         }
 
-        const canvas = document.getElementById('measurementCanvas');
-        const ctx = canvas.getContext('2d');
+        // Initialize canvases and contexts
+        const frontCanvas = document.getElementById('frontCanvas');
+        const backCanvas = document.getElementById('backCanvas');
+        const sideCanvas = document.getElementById('sideCanvas');
+
+        const frontCtx = frontCanvas.getContext('2d');
+        const backCtx = backCanvas.getContext('2d');
+        const sideCtx = sideCanvas.getContext('2d');
+
+        // Initialize default canvas sizes
+        frontCanvas.width = 300;
+        frontCanvas.height = 400;
+        backCanvas.width = 300;
+        backCanvas.height = 400;
+        sideCanvas.width = 300;
+        sideCanvas.height = 400;
+
+        // Draw placeholder backgrounds
+        function drawPlaceholder(canvas, ctx, text) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#666666';
+            ctx.font = '16px Segoe UI';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, canvas.width/2, canvas.height/2);
+        }
+
+        drawPlaceholder(frontCanvas, frontCtx, 'Upload Front View');
+        drawPlaceholder(backCanvas, backCtx, 'Upload Back View');
+        drawPlaceholder(sideCanvas, sideCtx, 'Upload Side View');
+
         const imageInput = document.getElementById('imageInput');
         const clearButton = document.getElementById('clearPoints');
+        const clearAllButton = document.getElementById('clearAllPoints');
+        const viewSelector = document.getElementById('viewSelector');
         const output = document.getElementById('measurementOutput');
 
-        let points = [];
-        let image = null;
+        let currentView = 'front';
+        const measurement = new BodyMeasurement(26.5);
 
-        // Handle image upload
+        // Set up measurement with canvas references
+        measurement.views.front.canvas = frontCanvas;
+        measurement.views.front.ctx = frontCtx;
+        measurement.views.back.canvas = backCanvas;
+        measurement.views.back.ctx = backCtx;
+        measurement.views.side.canvas = sideCanvas;
+        measurement.views.side.ctx = sideCtx;
+
+        // Highlight active view container
+        function highlightActiveView() {
+            document.querySelectorAll('.canvas-container').forEach(container => {
+                container.classList.remove('active-view');
+            });
+            document.getElementById(`${currentView}Container`).classList.add('active-view');
+        }
+
+        highlightActiveView();
+
+        viewSelector.addEventListener('change', (e) => {
+            currentView = e.target.value;
+            highlightActiveView();
+        });
+
         imageInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (event) => {
-                    image = new Image();
-                    image.onload = () => {
-                        canvas.width = image.width;
-                        canvas.height = image.height;
-                        drawImage();
+                    const img = new Image();
+                    img.onload = () => {
+                        const view = measurement.views[currentView];
+                        view.image = img;
+                        
+                        // Adjust canvas size for the uploaded image
+                        // Maintain aspect ratio but limit max dimensions
+                        const maxWidth = 500;
+                        const maxHeight = 600;
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        if (width > maxWidth) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                        }
+                        
+                        if (height > maxHeight) {
+                            width = (width * maxHeight) / height;
+                            height = maxHeight;
+                        }
+                        
+                        view.canvas.width = width;
+                        view.canvas.height = height;
+                        
+                        drawViewCanvas(currentView);
+                        updateMeasurements();
                     };
-                    image.src = event.target.result;
+                    img.src = event.target.result;
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        // Handle canvas clicks
-        canvas.addEventListener('click', (e) => {
+        // Add click handlers to each canvas
+        frontCanvas.addEventListener('click', (e) => handleCanvasClick(e, 'front'));
+        backCanvas.addEventListener('click', (e) => handleCanvasClick(e, 'back'));
+        sideCanvas.addEventListener('click', (e) => handleCanvasClick(e, 'side'));
+
+        function handleCanvasClick(e, view) {
+            // If this is not the active view, switch to it
+            if (currentView !== view) {
+                currentView = view;
+                viewSelector.value = view;
+                highlightActiveView();
+            }
+
+            const canvas = measurement.views[view].canvas;
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
             
-            points.push({ x, y });
-            drawImage();
+            // Adjust for canvas scaling and position
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+            
+            measurement.views[view].points.push({ x, y });
+            drawViewCanvas(view);
 
-            // After collecting all points, calculate measurements
-            if (points.length >= 9) { // 2 points for reference + 7 body points
-                calculateMeasurements();
+            const requiredPoints = view === 'side' ? 6 : 9;
+            if (measurement.views[view].points.length >= requiredPoints) {
+                calculateViewMeasurements(view);
+                updateMeasurements();
             }
-        });
-
-        // Clear points
-        clearButton.addEventListener('click', () => {
-            points = [];
-            drawImage();
-            output.textContent = '';
-        });
-
-        function drawImage() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if (image) {
-                ctx.drawImage(image, 0, 0);
-            }
-
-            // Draw points
-            points.forEach((point, index) => {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
-                ctx.fillStyle = index < 2 ? 'red' : 'blue';
-                ctx.fill();
-                ctx.fillText(`Point ${index + 1}`, point.x + 10, point.y);
-            });
         }
 
-        function calculateMeasurements() {
-            // Calculate reference object size in pixels
+        clearButton.addEventListener('click', () => {
+            measurement.views[currentView].points = [];
+            drawViewCanvas(currentView);
+            updateMeasurements();
+        });
+
+        clearAllButton.addEventListener('click', () => {
+            for (const view in measurement.views) {
+                measurement.views[view].points = [];
+                drawViewCanvas(view);
+            }
+            updateMeasurements();
+        });
+
+        function drawViewCanvas(view) {
+            const viewData = measurement.views[view];
+            const canvas = viewData.canvas;
+            const ctx = viewData.ctx;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (viewData.image) {
+                ctx.drawImage(viewData.image, 0, 0, canvas.width, canvas.height);
+            } else {
+                drawPlaceholder(canvas, ctx, `Upload ${view.charAt(0).toUpperCase() + view.slice(1)} View`);
+            }
+
+            viewData.points.forEach((point, index) => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+                ctx.fillStyle = index < 2 ? '#ff4444' : '#4a90e2';
+                ctx.fill();
+                const labelOffsetX = point.x < canvas.width/2 ? 10 : -40;
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Segoe UI';
+                ctx.fillText(`P${index + 1}`, point.x + labelOffsetX, point.y - 5);
+            });
+
+            if (viewData.points.length >= 2) {
+                ctx.beginPath();
+                ctx.moveTo(viewData.points[0].x, viewData.points[0].y);
+                ctx.lineTo(viewData.points[1].x, viewData.points[1].y);
+                ctx.strokeStyle = '#ff4444';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        function calculateViewMeasurements(view) {
+            const points = measurement.views[view].points;
+            const requiredPoints = view === 'side' ? 6 : 9;
+            if (points.length < requiredPoints) return;
+
             const referenceSize = Math.sqrt(
                 Math.pow(points[1].x - points[0].x, 2) +
                 Math.pow(points[1].y - points[0].y, 2)
             );
 
-            // Create body measurement instance
-            const bodyPoints = points.slice(2); // Skip reference points
-            const measurement = new BodyMeasurement(26.5, bodyPoints); // 26.5mm = Canadian dollar diameter
-            measurement.calibrateScale(referenceSize);
+            if (referenceSize < 10) {
+                output.textContent = `Error: Reference object too small in ${view} view`;
+                return;
+            }
 
-            // Calculate measurements
-            const measurements = {
-                height: measurement.calculateHeight(),
-                shoulderWidth: measurement.calculateShoulderWidth(),
-            };
+            measurement.calibrateScale(view, referenceSize);
+        }
 
-            // Display results
-            output.textContent = JSON.stringify(measurements, null, 2);
+        function updateMeasurements() {
+            try {
+                const height = measurement.calculateHeight();
+                const shoulderWidth = measurement.calculateShoulderWidth();
+                const hipWidth = measurement.calculateHipWidth();
+
+                let outputText = 'Measurements:\n';
+                if (height) outputText += `Height: ${Math.round(height)} mm\n`;
+                else outputText += `Height: Not available (needs side view)\n`;
+                if (shoulderWidth) outputText += `Shoulder Width: ${Math.round(shoulderWidth)} mm\n`;
+                else outputText += `Shoulder Width: Not available\n`;
+                if (hipWidth) outputText += `Hip Width: ${Math.round(hipWidth)} mm\n`;
+                else outputText += `Hip Width: Not available\n`;
+                
+                outputText += '\nStatus:\n';
+                outputText += `Front points: ${measurement.views.front.points.length}/9\n`;
+                outputText += `Back points: ${measurement.views.back.points.length}/9\n`;
+                outputText += `Side points: ${measurement.views.side.points.length}/6\n`;
+                
+                outputText += '\nTips: Select the view you want to work on and\n';
+                outputText += 'Complete all three views for the most accurate measurements.';
+
+                output.textContent = outputText;
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
         }
     </script>
-    
 </body>
-
 </html>
